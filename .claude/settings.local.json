@@ -27,7 +27,9 @@
       "Bash(bash push.sh:*)",
       "Bash(bash:*)",
       "Bash(kubectl exec:*)",
-      "Bash(timeout 5 kubectl exec:*)"
+      "Bash(timeout 5 kubectl exec:*)",
+      "Bash(./build-and-push-amd64.sh:*)",
+      "Bash(docker --version:*)"
     ],
     "deny": [],
     "ask": []
