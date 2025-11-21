@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: gadget-management
+  labels:
+    app: gadget-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gadget-frontend
+  template:
+    metadata:
+      labels:
+        app: gadget-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: emrahkk/gadget-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: gadget-management
+  labels:
+    app: gadget-frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+      nodePort: 30080
+  selector:
+    app: gadget-frontend

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(podman run:*)",
+      "Bash(make build:*)",
+      "Bash(podman images:*)",
+      "Bash(./build.sh:*)",
+      "Bash(podman system prune:*)",
+      "Bash(kubectl get:*)",
+      "Bash(podman build:*)",
+      "Bash(curl:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(podman tag:*)",
+      "Bash(podman push:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(kubectl exec -n gadget-management -l app=gadget-backend -- kubectl-gadget version)",
+      "Bash(kubectl apply:*)",
+      "Bash(podman save:*)",
+      "Bash(sudo k3s ctr images import:*)",
+      "Bash(npm run build:*)",
+      "Bash(CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build:*)",
+      "Bash(./build-frontend.sh)",
+      "Bash(./push.sh)",
+      "Bash(bash push.sh:*)",
+      "Bash(bash:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(timeout 5 kubectl exec:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Traffic Flow - Interactive Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+            color: #fff;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .controls button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .controls button:hover {
+            background: #45a049;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #fff;
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 400px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        .info-panel p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 1000;
+        }
+
+        .stats div {
+            margin: 5px 0;
+        }
+
+        .error-indicator {
+            color: #ff5252;
+            font-weight: bold;
+        }
+
+        .success-indicator {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        
+        <div class="controls">
+            <h3 style="margin-bottom: 10px;">Controls</h3>
+            <button onclick="resetView()">Reset View</button>
+            <button onclick="toggleAnimation()">Pause/Resume</button>
+            <button onclick="toggleLabels()">Toggle Labels</button>
+            <button onclick="highlightErrors()">Show Errors</button>
+        </div>
+
+        <div class="legend">
+            <h3 style="margin-bottom: 10px;">Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4CAF50;"></div>
+                <span>Gateway/API</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2196F3;"></div>
+                <span>Service</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF9800;"></div>
+                <span>Database</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9C27B0;"></div>
+                <span>Message Queue</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #F44336;"></div>
+                <span>External/Error</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #00BCD4;"></div>
+                <span>Redis Cache</span>
+            </div>
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            <h3>Node Information</h3>
+            <p id="nodeName"></p>
+            <p id="nodeType"></p>
+            <p id="nodeConnections"></p>
+        </div>
+
+        <div class="stats">
+            <h3 style="margin-bottom: 10px;">Statistics</h3>
+            <div>Total Nodes: <span id="totalNodes">0</span></div>
+            <div>Total Connections: <span id="totalConnections">0</span></div>
+            <div>Active Flows: <span id="activeFlows">0</span></div>
+            <div class="error-indicator">Connection Errors: <span id="errorCount">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let animationRunning = true;
+        let showLabels = true;
+        let highlightErrorsMode = false;
+        
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let selectedNode = null;
+        let isDraggingNode = false;
+
+        // Node types and colors
+        const nodeTypes = {
+            gateway: { color: '#4CAF50', size: 25 },
+            service: { color: '#2196F3', size: 20 },
+            database: { color: '#FF9800', size: 22 },
+            queue: { color: '#9C27B0', size: 22 },
+            external: { color: '#F44336', size: 18 },
+            cache: { color: '#00BCD4', size: 30 }
+        };
+
+        // Parse the trace data and create nodes
+        function initializeNetwork() {
+            // Define key nodes based on the trace data
+            const nodeDefinitions = [
+                // Gateways
+                { id: 'adminpanel-gateway', name: 'Admin Panel\nGateway', type: 'gateway', x: 400, y: 200 },
+                
+                // Services
+                { id: 'adminpanel', name: 'Admin Panel', type: 'service', x: 300, y: 350 },
+                { id: 'adminpanel-segment', name: 'Admin Segment', type: 'service', x: 500, y: 350 },
+                { id: 'adminpanel-download', name: 'Admin Download', type: 'service', x: 400, y: 450 },
+                { id: 'adminpanel-internal', name: 'Admin Internal', type: 'service', x: 600, y: 350 },
+                
+                { id: 'integration-api', name: 'Integration\nPublic API', type: 'service', x: 800, y: 200 },
+                { id: 'realtime-inapp-api', name: 'Realtime\nInApp API', type: 'service', x: 900, y: 350 },
+                { id: 'geofence-api', name: 'Geofence\nAPI', type: 'service', x: 1000, y: 250 },
+                { id: 'audience-api', name: 'Audience\nAPI', type: 'service', x: 1100, y: 350 },
+                { id: 'onsite-public-api', name: 'Onsite\nPublic API', type: 'service', x: 800, y: 450 },
+                
+                { id: 'push-bulk-sender', name: 'Push Bulk\nSender', type: 'service', x: 600, y: 600 },
+                { id: 'push-transactional', name: 'Push\nTransactional', type: 'service', x: 700, y: 700 },
+                { id: 'email-transactional', name: 'Email\nTransactional', type: 'service', x: 500, y: 700 },
+                { id: 'sms-transactional', name: 'SMS\nTransactional', type: 'service', x: 400, y: 700 },
+                
+                { id: 'automationmanager', name: 'Automation\nManager', type: 'service', x: 200, y: 500 },
+                { id: 'audiencemanager', name: 'Audience\nManager', type: 'service', x: 200, y: 600 },
+                { id: 'bulkmanager', name: 'Bulk\nManager', type: 'service', x: 200, y: 700 },
+                
+                { id: 'geofence-service', name: 'Geofence\nService', type: 'service', x: 1200, y: 450 },
+                { id: 'audience-service', name: 'Audience\nService', type: 'service', x: 1300, y: 350 },
+                { id: 'common-service', name: 'Common\nService', type: 'service', x: 1000, y: 550 },
+                
+                // Databases
+                { id: 'postgresql', name: 'PostgreSQL\n10.180.51.155', type: 'database', x: 200, y: 200 },
+                
+                // Cache
+                { id: 'redis-cluster', name: 'Redis Cluster\n(Nodes 0-5)', type: 'cache', x: 1400, y: 400 },
+                
+                // Message Queue
+                { id: 'rabbitmq', name: 'RabbitMQ\nServer', type: 'queue', x: 100, y: 400 },
+                
+                // External (with errors)
+                { id: 'external-redis', name: 'External Redis\n10.194.28.102\n(UNREACHABLE)', type: 'external', x: 1200, y: 700 },
+            ];
+
+            nodes = nodeDefinitions.map(def => ({
+                ...def,
+                vx: 0,
+                vy: 0,
+                radius: nodeTypes[def.type].size,
+                color: nodeTypes[def.type].color,
+                connections: 0,
+                hasError: def.type === 'external'
+            }));
+
+            // Define connections based on trace data
+            const connectionDefinitions = [
+                // Gateway connections
+                { from: 'adminpanel-gateway', to: 'adminpanel', bandwidth: 150, errors: 0 },
+                { from: 'adminpanel-gateway', to: 'adminpanel-segment', bandwidth: 120, errors: 0 },
+                { from: 'adminpanel-gateway', to: 'adminpanel-download', bandwidth: 100, errors: 0 },
+                { from: 'adminpanel-gateway', to: 'adminpanel-internal', bandwidth: 90, errors: 0 },
+                
+                // Service to PostgreSQL
+                { from: 'automationmanager', to: 'postgresql', bandwidth: 200, errors: 0 },
+                { from: 'audiencemanager', to: 'postgresql', bandwidth: 150, errors: 0 },
+                { from: 'bulkmanager', to: 'postgresql', bandwidth: 180, errors: 0 },
+                { from: 'adminpanel-download', to: 'postgresql', bandwidth: 50, errors: 0 },
+                
+                // Service to Redis cluster
+                { from: 'integration-api', to: 'redis-cluster', bandwidth: 450, errors: 0 },
+                { from: 'realtime-inapp-api', to: 'redis-cluster', bandwidth: 300, errors: 0 },
+                { from: 'geofence-api', to: 'redis-cluster', bandwidth: 180, errors: 0 },
+                { from: 'audience-api', to: 'redis-cluster', bandwidth: 220, errors: 0 },
+                { from: 'onsite-public-api', to: 'redis-cluster', bandwidth: 190, errors: 0 },
+                { from: 'geofence-service', to: 'redis-cluster', bandwidth: 330, errors: 0 },
+                { from: 'audience-service', to: 'redis-cluster', bandwidth: 200, errors: 0 },
+                { from: 'email-transactional', to: 'redis-cluster', bandwidth: 150, errors: 0 },
+                { from: 'sms-transactional', to: 'redis-cluster', bandwidth: 140, errors: 0 },
+                { from: 'push-transactional', to: 'redis-cluster', bandwidth: 160, errors: 0 },
+                
+                // Service to RabbitMQ
+                { from: 'push-bulk-sender', to: 'rabbitmq', bandwidth: 150, errors: 0 },
+                { from: 'push-transactional', to: 'rabbitmq', bandwidth: 130, errors: 0 },
+                { from: 'email-transactional', to: 'rabbitmq', bandwidth: 120, errors: 0 },
+                
+                // Error connections to external
+                { from: 'realtime-inapp-api', to: 'external-redis', bandwidth: 100, errors: 25 },
+                { from: 'push-bulk-sender', to: 'external-redis', bandwidth: 150, errors: 30 },
+                { from: 'common-service', to: 'external-redis', bandwidth: 80, errors: 20 },
+                { from: 'audience-api', to: 'external-redis', bandwidth: 90, errors: 15 },
+                { from: 'email-transactional', to: 'external-redis', bandwidth: 70, errors: 12 },
+            ];
+
+            connections = connectionDefinitions.map(conn => {
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const toNode = nodes.find(n => n.id === conn.to);
+                
+                if (fromNode && toNode) {
+                    fromNode.connections++;
+                    toNode.connections++;
+                    
+                    return {
+                        from: fromNode,
+                        to: toNode,
+                        bandwidth: conn.bandwidth,
+                        errors: conn.errors,
+                        particles: []
+                    };
+                }
+            }).filter(Boolean);
+
+            // Create particles for animation
+            connections.forEach(conn => {
+                const particleCount = Math.max(2, Math.floor(conn.bandwidth / 50));
+                for (let i = 0; i < particleCount; i++) {
+                    conn.particles.push({
+                        progress: i / particleCount,
+                        speed: 0.002 + (conn.bandwidth / 50000)
+                    });
+                }
+            });
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalNodes').textContent = nodes.length;
+            document.getElementById('totalConnections').textContent = connections.length;
+            document.getElementById('activeFlows').textContent = connections.reduce((sum, c) => sum + c.particles.length, 0);
+            document.getElementById('errorCount').textContent = connections.reduce((sum, c) => sum + c.errors, 0);
+        }
+
+        function drawNode(node) {
+            const x = node.x + offsetX;
+            const y = node.y + offsetY;
+            
+            // Draw glow for nodes with errors
+            if (node.hasError || (highlightErrorsMode && connections.some(c => c.errors > 0 && (c.from === node || c.to === node)))) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ff5252';
+            } else {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = node.color;
+            }
+            
+            // Special rendering for Redis cluster (showing multiple nodes)
+            if (node.id === 'redis-cluster') {
+                // Draw cluster background
+                ctx.beginPath();
+                ctx.arc(x, y, node.radius + 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 188, 212, 0.2)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0, 188, 212, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Draw multiple smaller circles to represent cluster nodes
+                const miniNodes = [
+                    { angle: 0, offset: 0 },
+                    { angle: 60, offset: 12 },
+                    { angle: 120, offset: 12 },
+                    { angle: 180, offset: 12 },
+                    { angle: 240, offset: 12 },
+                    { angle: 300, offset: 12 }
+                ];
+                
+                miniNodes.forEach((mini, idx) => {
+                    const rad = (mini.angle * Math.PI) / 180;
+                    const mx = x + Math.cos(rad) * mini.offset;
+                    const my = y + Math.sin(rad) * mini.offset;
+                    
+                    ctx.beginPath();
+                    ctx.arc(mx, my, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = node.color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    
+                    // Add node number
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 8px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(idx, mx, my);
+                });
+            } else {
+                // Draw node circle
+                ctx.beginPath();
+                ctx.arc(x, y, node.radius, 0, Math.PI * 2);
+                ctx.fillStyle = node.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0;
+            
+            // Draw connection count badge
+            if (node.connections > 0) {
+                ctx.beginPath();
+                ctx.arc(x + node.radius - 5, y - node.radius + 5, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.connections, x + node.radius - 5, y - node.radius + 5);
+            }
+            
+            // Draw label
+            if (showLabels) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                
+                const lines = node.name.split('\n');
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x, y + node.radius + 5 + (i * 14));
+                });
+            }
+        }
+
+        function drawConnection(conn) {
+            const fromX = conn.from.x + offsetX;
+            const fromY = conn.from.y + offsetY;
+            const toX = conn.to.x + offsetX;
+            const toY = conn.to.y + offsetY;
+            
+            // Draw connection line
+            const gradient = ctx.createLinearGradient(fromX, fromY, toX, toY);
+            
+            if (conn.errors > 0 && highlightErrorsMode) {
+                gradient.addColorStop(0, 'rgba(255, 82, 82, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 82, 82, 0.3)');
+                ctx.lineWidth = 3;
+            } else {
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+                ctx.lineWidth = Math.max(1, conn.bandwidth / 100);
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.strokeStyle = gradient;
+            ctx.stroke();
+            
+            // Draw bandwidth label at midpoint
+            if (showLabels) {
+                const midX = (fromX + toX) / 2;
+                const midY = (fromY + toY) / 2;
+                
+                ctx.fillStyle = conn.errors > 0 ? '#ff5252' : '#4CAF50';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Background for label
+                const text = conn.errors > 0 ? `${conn.bandwidth} KB/s (${conn.errors} errors)` : `${conn.bandwidth} KB/s`;
+                const textWidth = ctx.measureText(text).width;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(midX - textWidth/2 - 4, midY - 8, textWidth + 8, 16);
+                
+                ctx.fillStyle = conn.errors > 0 ? '#ff5252' : '#fff';
+                ctx.fillText(text, midX, midY);
+            }
+            
+            // Draw particles
+            conn.particles.forEach(particle => {
+                const x = fromX + (toX - fromX) * particle.progress;
+                const y = fromY + (toY - fromY) * particle.progress;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = conn.errors > 0 ? '#ff5252' : '#4CAF50';
+                ctx.fill();
+                
+                // Update particle
+                if (animationRunning) {
+                    particle.progress += particle.speed;
+                    if (particle.progress > 1) {
+                        particle.progress = 0;
+                    }
+                }
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw connections first
+            connections.forEach(drawConnection);
+            
+            // Draw nodes on top
+            nodes.forEach(drawNode);
+            
+            requestAnimationFrame(draw);
+        }
+
+        function resetView() {
+            offsetX = 0;
+            offsetY = 0;
+            initializeNetwork();
+        }
+
+        function toggleAnimation() {
+            animationRunning = !animationRunning;
+        }
+
+        function toggleLabels() {
+            showLabels = !showLabels;
+        }
+
+        function highlightErrors() {
+            highlightErrorsMode = !highlightErrorsMode;
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Check if clicking on a node
+            selectedNode = nodes.find(node => {
+                const dx = mouseX - (node.x + offsetX);
+                const dy = mouseY - (node.y + offsetY);
+                return Math.sqrt(dx * dx + dy * dy) < node.radius;
+            });
+            
+            if (selectedNode) {
+                isDraggingNode = true;
+                showNodeInfo(selectedNode);
+            } else {
+                isDragging = true;
+                dragStart = { x: mouseX - offsetX, y: mouseY - offsetY };
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            if (isDraggingNode && selectedNode) {
+                selectedNode.x = mouseX - offsetX;
+                selectedNode.y = mouseY - offsetY;
+            } else if (isDragging) {
+                offsetX = mouseX - dragStart.x;
+                offsetY = mouseY - dragStart.y;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            isDraggingNode = false;
+            if (!selectedNode) {
+                document.getElementById('infoPanel').style.display = 'none';
+            }
+        });
+
+        function showNodeInfo(node) {
+            const panel = document.getElementById('infoPanel');
+            document.getElementById('nodeName').textContent = `Name: ${node.name.replace('\n', ' ')}`;
+            document.getElementById('nodeType').textContent = `Type: ${node.type.toUpperCase()}`;
+            
+            const incoming = connections.filter(c => c.to === node).length;
+            const outgoing = connections.filter(c => c.from === node).length;
+            document.getElementById('nodeConnections').textContent = 
+                `Connections: ${incoming} incoming, ${outgoing} outgoing`;
+            
+            panel.style.display = 'block';
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Initialize and start
+        initializeNetwork();
+        draw();
+    </script>
+</body>
+</html>
