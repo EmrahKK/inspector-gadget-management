@@ -1,9 +1,5 @@
 name: Push to DockerHub
 
-on:
-  push:
-    tags: [ 'v*' ]
-
 jobs:
 
   push:
