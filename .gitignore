@@ -16,7 +16,6 @@ Thumbs.db
 
 # Backend
 backend/server
-backend/go.sum
 
 # Frontend
 frontend/node_modules/

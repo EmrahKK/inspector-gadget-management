@@ -29,7 +29,8 @@
       "Bash(kubectl exec:*)",
       "Bash(timeout 5 kubectl exec:*)",
       "Bash(./build-and-push-amd64.sh:*)",
-      "Bash(docker --version:*)"
+      "Bash(docker --version:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
