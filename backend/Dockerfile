@@ -1,14 +1,20 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Copy all source code
+# Copy go.mod and go.sum first for better caching
+COPY go.mod go.sum ./
+
+# Download dependencies separately (this helps with cross-platform builds)
+RUN go mod download && go mod verify
+
+# Copy the rest of the source code
 COPY . .
 
 # Build the application (TARGETARCH is automatically set by Docker/Podman)
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} go build -mod=readonly -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} go build -o server ./cmd/server
 
 # Runtime stage
 FROM alpine:latest

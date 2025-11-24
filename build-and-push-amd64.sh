@@ -9,63 +9,83 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-VERSION=$1
+VERSION="$1"
+PLATFORM="linux/amd64"
+TARGETARCH="amd64"
 
-# Check if docker is available (required for buildx)
-if ! command -v docker &> /dev/null; then
-    echo "Error: Docker is required for cross-platform builds"
-    echo "Please install Docker Desktop for Mac"
+# Detect container runtime (prefer docker for buildx support)
+if command -v docker &> /dev/null; then
+    CONTAINER_RUNTIME="docker"
+elif command -v podman &> /dev/null; then
+    CONTAINER_RUNTIME="podman"
+else
+    echo "Error: Neither docker nor podman found. Please install one of them."
     exit 1
 fi
 
-echo "Using Docker with buildx for cross-platform build"
-echo "Building for linux/amd64 platform with version: $VERSION"
-
-# Set platform and architecture
-PLATFORM="linux/amd64"
-TARGETARCH="amd64"
+echo "Using container runtime: $CONTAINER_RUNTIME"
+echo "Building for platform: $PLATFORM"
+echo "Version: $VERSION"
+echo ""
 
 # Docker Hub username
 DOCKER_USERNAME="emrahkk"
 
-# Image names with version tag
+# Image names with version
 BACKEND_IMAGE="$DOCKER_USERNAME/gadget-backend:$VERSION"
 FRONTEND_IMAGE="$DOCKER_USERNAME/gadget-frontend:$VERSION"
 
-# Ensure buildx is available
-echo ""
-echo "Checking docker buildx..."
-docker buildx version
-
-# Create builder instance if it doesn't exist
-if ! docker buildx ls | grep -q "multiplatform"; then
-    echo "Creating multiplatform builder..."
-    docker buildx create --name multiplatform --use
-else
-    echo "Using existing multiplatform builder..."
-    docker buildx use multiplatform
+# Ensure buildx builder exists and is using docker-container driver
+if [ "$CONTAINER_RUNTIME" = "docker" ]; then
+    echo "Setting up buildx builder..."
+    # Create builder if it doesn't exist
+    if ! docker buildx inspect multiplatform &> /dev/null; then
+        docker buildx create --name multiplatform --driver docker-container --use
+    else
+        docker buildx use multiplatform
+    fi
 fi
 
 # Build and push backend
-echo ""
 echo "Building and pushing backend image for $PLATFORM..."
-docker buildx build --platform $PLATFORM \
-    --build-arg TARGETARCH=$TARGETARCH \
-    -t $BACKEND_IMAGE \
-    --push \
-    ./backend
+if [ "$CONTAINER_RUNTIME" = "docker" ]; then
+    docker buildx build --platform $PLATFORM \
+        --build-arg TARGETARCH=$TARGETARCH \
+        -t $BACKEND_IMAGE \
+        --push \
+        ./backend
+else
+    $CONTAINER_RUNTIME build --platform $PLATFORM \
+        --build-arg TARGETARCH=$TARGETARCH \
+        -t gadget-backend:$VERSION \
+        ./backend
+    $CONTAINER_RUNTIME tag gadget-backend:$VERSION $BACKEND_IMAGE
+    echo "Pushing backend..."
+    $CONTAINER_RUNTIME push $BACKEND_IMAGE
+fi
 
 # Build and push frontend
-echo ""
 echo "Building and pushing frontend image for $PLATFORM..."
-docker buildx build --platform $PLATFORM \
-    -t $FRONTEND_IMAGE \
-    --push \
-    ./frontend
+if [ "$CONTAINER_RUNTIME" = "docker" ]; then
+    docker buildx build --platform $PLATFORM \
+        -t $FRONTEND_IMAGE \
+        --push \
+        ./frontend
+else
+    $CONTAINER_RUNTIME build --platform $PLATFORM \
+        -t gadget-frontend:$VERSION \
+        ./frontend
+    $CONTAINER_RUNTIME tag gadget-frontend:$VERSION $FRONTEND_IMAGE
+    echo "Pushing frontend..."
+    $CONTAINER_RUNTIME push $FRONTEND_IMAGE
+fi
 
 echo ""
-echo "======================================"
-echo "Successfully built and pushed images:"
+echo "Images pushed successfully!"
 echo "  - $BACKEND_IMAGE"
 echo "  - $FRONTEND_IMAGE"
-echo "======================================"
+echo ""
+echo "To use these images in Kubernetes:"
+echo "  Update your deployment files to use:"
+echo "    Backend: $BACKEND_IMAGE"
+echo "    Frontend: $FRONTEND_IMAGE"

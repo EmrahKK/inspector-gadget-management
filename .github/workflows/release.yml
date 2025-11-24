@@ -1,0 +1,52 @@
+name: Push to DockerHub
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+
+  push:
+    name: Docker Push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    env:
+      REPOSITORY_URL: registry.hub.docker.com
+      IMAGE_NAME_BACKEND: emrahkk/gadget-backend
+      IMAGE_NAME_FRONTEND: emrahkk/gadget-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Backend
+        id: docker-build
+        run: >-
+          docker build
+          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          --build-arg RELEASE=$(cat VERSION)
+          --build-arg VERSION=${{ github.sha }}
+          -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(cat VERSION)
+          -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(git rev-parse --short HEAD) ./backend
+      - name: Build Frontend
+        id: docker-build
+        run: >-
+          docker build
+          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          --build-arg RELEASE=$(cat VERSION)
+          --build-arg VERSION=${{ github.sha }}
+          -t $REPOSITORY_URL/$IMAGE_NAME_FRONTEND:$(cat VERSION)
+          -t $REPOSITORY_URL/$IMAGE_NAME_FRONTEND:$(git rev-parse --short HEAD) ./frontend          
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REPOSITORY_URL }}
+          username: emrahkk
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Publish Image Backend
+        id: docker-push
+        run: docker push --all-tags $REPOSITORY_URL/$IMAGE_NAME_BACKEND
+      - name: Publish Image Frontend
+        id: docker-push
+        run: docker push --all-tags $REPOSITORY_URL/$IMAGE_NAME_FRONTEND        
+
+
