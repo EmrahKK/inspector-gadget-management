@@ -1,6 +1,12 @@
 name: Push to DockerHub
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version'
+        required: true
+        default: 'v0.0.1'
 
 jobs:
 
@@ -20,19 +26,13 @@ jobs:
         id: docker-build-backend
         run: >-
           docker build
-          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          --build-arg RELEASE=$(cat VERSION)
-          --build-arg VERSION=${{ github.sha }}
-          -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(cat VERSION)
+          -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:${{ github.event.inputs.version }}
           -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(git rev-parse --short HEAD) ./backend
       - name: Build Frontend
         id: docker-build-frontend
         run: >-
           docker build
-          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          --build-arg RELEASE=$(cat VERSION)
-          --build-arg VERSION=${{ github.sha }}
-          -t $REPOSITORY_URL/$IMAGE_NAME_FRONTEND:$(cat VERSION)
+          -t $REPOSITORY_URL/$IMAGE_NAME_FRONTEND:${{ github.event.inputs.version }}
           -t $REPOSITORY_URL/$IMAGE_NAME_FRONTEND:$(git rev-parse --short HEAD) ./frontend          
       - name: Docker Login
         uses: docker/login-action@v3
