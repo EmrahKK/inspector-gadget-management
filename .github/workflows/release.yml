@@ -13,7 +13,6 @@ jobs:
   push:
     name: Docker Push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     env:
       REPOSITORY_URL: registry.hub.docker.com
