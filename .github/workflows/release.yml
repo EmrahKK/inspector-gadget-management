@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Backend
-        id: docker-build
+        id: docker-build-backend
         run: >-
           docker build
           --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -28,7 +28,7 @@ jobs:
           -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(cat VERSION)
           -t $REPOSITORY_URL/$IMAGE_NAME_BACKEND:$(git rev-parse --short HEAD) ./backend
       - name: Build Frontend
-        id: docker-build
+        id: docker-build-frontend
         run: >-
           docker build
           --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
