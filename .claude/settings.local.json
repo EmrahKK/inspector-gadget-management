@@ -30,7 +30,11 @@
       "Bash(timeout 5 kubectl exec:*)",
       "Bash(./build-and-push-amd64.sh:*)",
       "Bash(docker --version:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm install)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl run:*)",
+      "Bash(/opt/homebrew/bin/npm run build)"
     ],
     "deny": [],
     "ask": []

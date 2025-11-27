@@ -55,6 +55,33 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
   const [availableNamespaces, setAvailableNamespaces] = useState<Set<string>>(new Set());
   const [selectedNamespaces, setSelectedNamespaces] = useState<Set<string>>(new Set());
 
+  // Load saved positions from localStorage
+  const loadSavedPositions = (): Map<string, { x: number; y: number }> => {
+    try {
+      const saved = localStorage.getItem('tcpflow-node-positions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return new Map(Object.entries(parsed));
+      }
+    } catch (e) {
+      console.error('Failed to load saved positions:', e);
+    }
+    return new Map();
+  };
+
+  const savedPositionsRef = useRef<Map<string, { x: number; y: number }>>(loadSavedPositions());
+
+  // Save positions to localStorage when nodes are dragged
+  const saveNodePosition = (nodeId: string, x: number, y: number) => {
+    savedPositionsRef.current.set(nodeId, { x, y });
+    try {
+      const positionsObj = Object.fromEntries(savedPositionsRef.current);
+      localStorage.setItem('tcpflow-node-positions', JSON.stringify(positionsObj));
+    } catch (e) {
+      console.error('Failed to save positions:', e);
+    }
+  };
+
   // Node colors by type
   const nodeColors = {
     pod: '#4CAF50',
@@ -150,7 +177,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
     return { srcInfo, dstInfo };
   };
 
-  // Create or get node
+  // Create or get node with smart hierarchical layout
   const getOrCreateNode = (
     id: string,
     label: string,
@@ -167,19 +194,47 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       throw new Error('Canvas not ready');
     }
 
-    // Position nodes in a circular layout initially
-    const angle = (nodesMap.size * 2 * Math.PI) / 10;
-    const radius = Math.min(canvas.width, canvas.height) * 0.3;
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    let x: number;
+    let y: number;
+
+    // Check if we have a saved position for this node
+    const savedPos = savedPositionsRef.current.get(id);
+    if (savedPos) {
+      x = savedPos.x;
+      y = savedPos.y;
+    } else {
+      // Smart hierarchical layout: pods on left, services/external on right
+      const padding = 100;
+      const verticalSpacing = 80;
+
+      if (type === 'pod') {
+        // Count existing pod nodes to stack vertically
+        const podCount = Array.from(nodesMap.values()).filter(n => n.type === 'pod').length;
+        x = padding + 50; // Left side
+        y = padding + (podCount * verticalSpacing);
+      } else if (type === 'service') {
+        // Count existing service nodes
+        const serviceCount = Array.from(nodesMap.values()).filter(n => n.type === 'service').length;
+        x = canvas.width - padding - 50; // Right side
+        y = padding + (serviceCount * verticalSpacing);
+      } else {
+        // External IPs - far right
+        const externalCount = Array.from(nodesMap.values()).filter(n => n.type === 'external').length;
+        x = canvas.width - padding - 150;
+        y = padding + (externalCount * verticalSpacing);
+      }
+
+      // Keep nodes within canvas bounds
+      y = Math.min(y, canvas.height - padding);
+    }
 
     const node: Node = {
       id,
       label,
       type,
       namespace,
-      x: centerX + Math.cos(angle) * radius,
-      y: centerY + Math.sin(angle) * radius,
+      x,
+      y,
       vx: 0,
       vy: 0,
       radius: type === 'pod' ? 25 : 20,
@@ -505,16 +560,55 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
     setZoom(1.0);
   };
 
+  // Reset layout - clear saved positions and recalculate node positions
+  const handleResetLayout = () => {
+    savedPositionsRef.current.clear();
+    localStorage.removeItem('tcpflow-node-positions');
+
+    // Recalculate positions for all existing nodes
+    const canvas = canvasRef.current;
+    if (!canvas || nodes.size === 0) return;
+
+    const newNodes = new Map(nodes);
+    const padding = 100;
+    const verticalSpacing = 80;
+
+    // Separate nodes by type
+    const podNodes = Array.from(newNodes.values()).filter(n => n.type === 'pod');
+    const serviceNodes = Array.from(newNodes.values()).filter(n => n.type === 'service');
+    const externalNodes = Array.from(newNodes.values()).filter(n => n.type === 'external');
+
+    // Reposition pods on the left
+    podNodes.forEach((node, index) => {
+      node.x = padding + 50;
+      node.y = padding + (index * verticalSpacing);
+    });
+
+    // Reposition services on the right
+    serviceNodes.forEach((node, index) => {
+      node.x = canvas.width - padding - 50;
+      node.y = padding + (index * verticalSpacing);
+    });
+
+    // Reposition external IPs
+    externalNodes.forEach((node, index) => {
+      node.x = canvas.width - padding - 150;
+      node.y = padding + (index * verticalSpacing);
+    });
+
+    setNodes(newNodes);
+  };
+
   // Animation loop
   const animate = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Clear canvas with blue gradient background
+    // Clear canvas with dark slate gradient background
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#1e3c72');
-    gradient.addColorStop(1, '#2a5298');
+    gradient.addColorStop(0, '#0f172a'); // slate-900
+    gradient.addColorStop(1, '#1e293b'); // slate-800
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -607,6 +701,8 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       if (node) {
         node.x = canvasX - dragOffset.x;
         node.y = canvasY - dragOffset.y;
+        // Save position to localStorage
+        saveNodePosition(node.id, node.x, node.y);
         setNodes(newNodes);
       }
     } else if (isPanning) {
@@ -701,43 +797,74 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
   }, [nodes, connections, showLabels, isPaused, isFullscreen, zoom]);
 
   return (
-    <div style={isFullscreen ? styles.containerFullscreen : styles.container}>
-      <div style={styles.controls}>
-        <button onClick={() => setShowLabels(!showLabels)} style={styles.button}>
+    <div className={isFullscreen ? 'fixed inset-0 z-[9999] bg-gradient-to-br from-slate-900 to-slate-800' : 'relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden h-full'}>
+      {/* Controls */}
+      <div className="absolute top-3 left-3 z-10 flex gap-2 flex-wrap max-w-[calc(100%-180px)]">
+        <button
+          onClick={() => setShowLabels(!showLabels)}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+        >
           {showLabels ? 'Hide Labels' : 'Show Labels'}
         </button>
-        <button onClick={() => setIsPaused(!isPaused)} style={styles.button}>
+        <button
+          onClick={() => setIsPaused(!isPaused)}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+        >
           {isPaused ? 'Resume' : 'Pause'}
         </button>
         <button
           onClick={() => setShowErrorsOnly(!showErrorsOnly)}
-          style={{
-            ...styles.button,
-            backgroundColor: showErrorsOnly ? '#f44336' : '#4CAF50',
-          }}
+          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+            showErrorsOnly
+              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+              : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+          }`}
         >
           {showErrorsOnly ? 'Normal View' : 'Highlight Errors'}
         </button>
         <button
           onClick={() => setIsFullscreen(!isFullscreen)}
-          style={{ ...styles.button, backgroundColor: isFullscreen ? '#FF5722' : '#2196F3' }}
+          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+            isFullscreen
+              ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+              : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+          }`}
         >
           {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
-        <button onClick={handleZoomIn} style={styles.button} title="Zoom In">
+        <button
+          onClick={handleResetLayout}
+          className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 px-3 py-1.5 rounded text-sm transition-colors"
+          title="Reset node positions to default layout"
+        >
+          Reset Layout
+        </button>
+        <button
+          onClick={handleZoomIn}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          title="Zoom In"
+        >
           +
         </button>
-        <button onClick={handleZoomOut} style={styles.button} title="Zoom Out">
+        <button
+          onClick={handleZoomOut}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          title="Zoom Out"
+        >
           -
         </button>
-        <button onClick={handleZoomReset} style={styles.button} title="Reset Zoom">
+        <button
+          onClick={handleZoomReset}
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          title="Reset Zoom"
+        >
           {Math.round(zoom * 100)}%
         </button>
       </div>
 
       <canvas
         ref={canvasRef}
-        style={styles.canvas}
+        className="block w-full cursor-default"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -745,68 +872,77 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
         onWheel={handleWheel}
       />
 
-      <div style={styles.stats}>
-        <div style={styles.statItem}>
-          <span style={styles.statLabel}>Nodes:</span>
-          <span style={styles.statValue}>{stats.nodes}</span>
+      {/* Stats */}
+      <div className="absolute bottom-3 right-3 bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg flex gap-4 text-xs text-slate-300 border border-slate-700">
+        <div className="flex gap-1.5">
+          <span className="text-slate-500">Nodes:</span>
+          <span className="font-bold text-green-400">{stats.nodes}</span>
         </div>
-        <div style={styles.statItem}>
-          <span style={styles.statLabel}>Connections:</span>
-          <span style={styles.statValue}>{stats.connections}</span>
+        <div className="flex gap-1.5">
+          <span className="text-slate-500">Connections:</span>
+          <span className="font-bold text-blue-400">{stats.connections}</span>
         </div>
-        <div style={styles.statItem}>
-          <span style={styles.statLabel}>Active Flows:</span>
-          <span style={styles.statValue}>{stats.flows}</span>
+        <div className="flex gap-1.5">
+          <span className="text-slate-500">Active Flows:</span>
+          <span className="font-bold text-purple-400">{stats.flows}</span>
         </div>
-        <div style={{ ...styles.statItem, color: stats.errors > 0 ? '#ff5252' : '#4CAF50' }}>
-          <span style={styles.statLabel}>Errors:</span>
-          <span style={{ ...styles.statValue, fontWeight: 'bold' }}>{stats.errors}</span>
+        <div className="flex gap-1.5">
+          <span className="text-slate-500">Errors:</span>
+          <span className={`font-bold ${stats.errors > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            {stats.errors}
+          </span>
         </div>
       </div>
 
-      <div style={styles.legend}>
-        <div style={styles.legendTitle}>Legend</div>
-        <div style={styles.legendItem}>
-          <div style={{ ...styles.legendColor, backgroundColor: nodeColors.pod }} />
+      {/* Legend */}
+      <div className="absolute top-3 right-3 bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-300 border border-slate-700">
+        <div className="font-bold mb-2 text-white">Legend</div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.pod }} />
           <span>Kubernetes Pod</span>
         </div>
-        <div style={styles.legendItem}>
-          <div style={{ ...styles.legendColor, backgroundColor: nodeColors.service }} />
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.service }} />
           <span>Internal Service</span>
         </div>
-        <div style={styles.legendItem}>
-          <div style={{ ...styles.legendColor, backgroundColor: nodeColors.external }} />
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.external }} />
           <span>External IP</span>
         </div>
       </div>
 
+      {/* Namespace Filter */}
       {availableNamespaces.size > 0 && (
-        <div style={styles.namespaceFilter}>
-          <div style={styles.filterTitle}>
-            Namespace Filter
+        <div className="absolute bottom-3 left-3 bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-300 border border-slate-700 max-w-[250px] max-h-[300px] overflow-y-auto">
+          <div className="font-bold mb-2 flex justify-between items-center text-white">
+            <span>Namespace Filter</span>
             {selectedNamespaces.size > 0 && (
-              <button onClick={clearNamespaceFilter} style={styles.clearButton}>
+              <button
+                onClick={clearNamespaceFilter}
+                className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-0.5 rounded text-[10px] ml-2 transition-colors"
+              >
                 Clear ({selectedNamespaces.size})
               </button>
             )}
           </div>
-          <div style={styles.namespaceList}>
+          <div className="flex flex-col gap-1">
             {Array.from(availableNamespaces)
               .sort()
               .map((ns) => (
                 <div
                   key={ns}
-                  style={{
-                    ...styles.namespaceItem,
-                    ...(selectedNamespaces.has(ns) ? styles.namespaceItemSelected : {}),
-                  }}
                   onClick={() => toggleNamespace(ns)}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+                    selectedNamespaces.has(ns)
+                      ? 'bg-green-500/20 border border-green-500/50'
+                      : 'bg-slate-700/50 hover:bg-slate-700'
+                  }`}
                 >
                   <input
                     type="checkbox"
                     checked={selectedNamespaces.has(ns)}
                     onChange={() => {}}
-                    style={styles.checkbox}
+                    className="cursor-pointer"
                   />
                   <span>{ns}</span>
                 </div>
@@ -816,146 +952,4 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    position: 'relative',
-    background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-    borderRadius: '6px',
-    overflow: 'hidden',
-  },
-  containerFullscreen: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-    zIndex: 9999,
-    overflow: 'hidden',
-  },
-  canvas: {
-    display: 'block',
-    width: '100%',
-    cursor: 'default',
-  },
-  controls: {
-    position: 'absolute',
-    top: '10px',
-    left: '10px',
-    zIndex: 10,
-    display: 'flex',
-    gap: '10px',
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    border: 'none',
-    padding: '8px 16px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  stats: {
-    position: 'absolute',
-    bottom: '10px',
-    right: '10px',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: '10px 15px',
-    borderRadius: '6px',
-    display: 'flex',
-    gap: '15px',
-    fontSize: '13px',
-    color: '#fff',
-  },
-  statItem: {
-    display: 'flex',
-    gap: '5px',
-  },
-  statLabel: {
-    color: '#999',
-  },
-  statValue: {
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  legend: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: '10px 15px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    color: '#fff',
-  },
-  legendTitle: {
-    fontWeight: 'bold',
-    marginBottom: '8px',
-  },
-  legendItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '5px',
-  },
-  legendColor: {
-    width: '16px',
-    height: '16px',
-    borderRadius: '50%',
-    border: '2px solid #fff',
-  },
-  namespaceFilter: {
-    position: 'absolute',
-    bottom: '10px',
-    left: '10px',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: '10px 15px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    color: '#fff',
-    maxWidth: '250px',
-    maxHeight: '300px',
-    overflowY: 'auto',
-  },
-  filterTitle: {
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  clearButton: {
-    backgroundColor: '#f44336',
-    color: 'white',
-    border: 'none',
-    padding: '2px 8px',
-    borderRadius: '3px',
-    cursor: 'pointer',
-    fontSize: '11px',
-    marginLeft: '10px',
-  },
-  namespaceList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-  },
-  namespaceItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '5px 8px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    transition: 'background-color 0.2s',
-  },
-  namespaceItemSelected: {
-    backgroundColor: 'rgba(76, 175, 80, 0.3)',
-    border: '1px solid #4CAF50',
-  },
-  checkbox: {
-    cursor: 'pointer',
-  },
 };

@@ -51,8 +51,8 @@ func (c *Client) RunGadget(ctx context.Context, req models.GadgetRequest, sessio
 
 	var args []string
 	switch req.Type {
-	case models.GadgetTraceExec:
-		args = []string{"run", "trace_exec:latest"}
+	case models.GadgetTraceSNI:
+		args = []string{"run", "trace_sni:latest"}
 		if req.Namespace != "" {
 			args = append(args, "-n", req.Namespace)
 		} else {
@@ -89,6 +89,19 @@ func (c *Client) RunGadget(ctx context.Context, req models.GadgetRequest, sessio
 
 	case models.GadgetSnapshotProc:
 		args = []string{"run", "snapshot_process:latest"}
+		if req.Namespace != "" {
+			args = append(args, "-n", req.Namespace)
+		} else {
+			// When no namespace is specified, trace all namespaces
+			args = append(args, "-A")
+		}
+		if req.PodName != "" {
+			args = append(args, "--podname", req.PodName)
+		}
+		args = append(args, "-o", "json")
+
+	case models.GadgetSnapshotSocket:
+		args = []string{"run", "snapshot_socket:latest"}
 		if req.Namespace != "" {
 			args = append(args, "-n", req.Namespace)
 		} else {
@@ -195,6 +208,16 @@ func (c *Client) RunGadget(ctx context.Context, req models.GadgetRequest, sessio
 
 // handleOutput processes gadget output
 func (c *Client) handleOutput(session *Session, reader io.Reader) {
+	// Snapshot gadgets return a JSON array, trace gadgets return JSON objects
+	if session.Type == models.GadgetSnapshotProc || session.Type == models.GadgetSnapshotSocket {
+		c.handleSnapshotOutput(session, reader)
+	} else {
+		c.handleStreamingOutput(session, reader)
+	}
+}
+
+// handleStreamingOutput processes streaming gadget output (trace gadgets)
+func (c *Client) handleStreamingOutput(session *Session, reader io.Reader) {
 	decoder := json.NewDecoder(reader)
 
 	for {
@@ -219,6 +242,37 @@ func (c *Client) handleOutput(session *Session, reader io.Reader) {
 			// Channel full, skip event
 		}
 	}
+}
+
+// handleSnapshotOutput processes snapshot gadget output (array of items)
+func (c *Client) handleSnapshotOutput(session *Session, reader io.Reader) {
+	decoder := json.NewDecoder(reader)
+
+	var rawArray []map[string]interface{}
+	if err := decoder.Decode(&rawArray); err != nil {
+		if err != io.EOF {
+			session.ErrorCh <- fmt.Errorf("failed to decode snapshot output: %w", err)
+		}
+		return
+	}
+
+	// Send each item in the array as a separate output
+	for _, rawData := range rawArray {
+		output := models.GadgetOutput{
+			SessionID: session.ID,
+			Timestamp: time.Now(),
+			Data:      rawData,
+			EventType: string(session.Type),
+		}
+
+		select {
+		case session.OutputCh <- output:
+		default:
+			// Channel full, skip event
+		}
+	}
+
+	fmt.Printf("Snapshot gadget returned %d items\n", len(rawArray))
 }
 
 // handleErrors processes gadget errors

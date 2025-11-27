@@ -1,4 +1,4 @@
-export type GadgetType = 'trace_exec' | 'trace_tcp' | 'snapshot_process';
+export type GadgetType = 'trace_sni' | 'trace_tcp' | 'snapshot_process' | 'snapshot_socket';
 
 export interface Gadget {
   type: GadgetType;

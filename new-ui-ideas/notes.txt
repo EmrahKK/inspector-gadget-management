@@ -1,0 +1,127 @@
+I have investigated the Inspektor Gadget project and its capabilities. It is a powerful framework that converts low-level eBPF kernel data into high-level Kubernetes insights.
+
+I want to build a ui application that uses https://github.com/inspektor-gadget/inspektor-gadget project in an kubernetes cluster. I want to be able to select gadget type and run it through frontend and get gadget outputs. I want to be able to get outputs of the gadgets and show intuitive images graphs flow maps etc. 
+
+Here is an a breakdown of UI/Feature ideas.
+
+Structure of the UI:
+
+1. The "Gadget Catalog" (Discovery)
+Instead of a CLI list, present a card-based catalog organized by category. Users often know what they want to debug (e.g., "Network is slow") but not which tool to use.
+
+Categories: Network, Storage, System, Security (Audit).
+
+Feature: "Problem-First" search. (e.g., User types "slow file", UI suggests profile block-io or top file).
+
+
+look ui-prototaype-images/2025-11-24_21.09.16.png
+
+
+2. The "Gadget Runner" (Configuration)
+Abstract away the complex CLI flags (--node, --namespace, --selector).
+
+Scope Selector: A visual cluster map or dropdowns to select the target: Global vs Specific Node vs Specific Pod.
+
+Smart Filters: If trace network is selected, auto-populate a dropdown with known Service IPs to filter by.
+
+
+look ui-prototaype-images/2025-11-24_21.13.57.png
+
+3. Visualization Views (The "Output")
+Raw JSON is hard to read. You need specific views for specific gadget families:
+
+For trace (Streams):
+
+UI: A "Live Tail" view (like a terminal but interactive).
+
+Feature: Click on a Pod Name in the log to instantly pivot to a snapshot process for that pod.
+
+
+look ui-prototaype-images/2025-11-24_21.28.58.png
+
+
+
+For top (Metrics):
+
+UI: Real-time updating bar charts or leaderboards (like standard Linux top but graphical).
+
+Feature: "Freeze" button to pause updates for inspection.
+
+
+look ui-prototaype-images/2025-11-24_21.30.11.png
+
+
+For network (Topology):
+
+UI: A Service Map (Nodes and Edges).
+
+Feature: Thickness of lines represents bandwidth usage (from top tcp). Red lines indicate dropped packets (from trace tcp where drop reasons > 0).
+
+
+For profile (Performance):
+
+UI: Flame Graphs. This is the standard for CPU profiling.
+
+Feature: Click-to-zoom on stack traces.
+
+
+Besides;
+
+For showing "Running" state to the global level**.
+
+1.  **Global State Tracking:** The main app will now track which gadgets are active, not the individual runner components.
+
+
+2.  **"Active Operations" Sidebar Panel:** A new section in the sidebar will list currently running gadgets, allowing you to jump back to them or stop them directly from the menu.
+
+
+3.  **Visual Indicators:** Gadget cards in the catalog will glow or show a "Running" badge if they are active in the background.
+
+
+4.  **Smart Resume:** When you open a gadget that is already marked as "Running", it will immediately resume displaying data without needing to click "Start" again.
+
+
+Ui includes:
+
+React & Tailwind loaded via CDN.
+
+Recharts for the data visualization.
+
+you can find a sample html file at; index.html
+
+
+Technical architecture I'd recommend
+┌─────────────────┐
+│   Web Frontend  │ (React & Tailwind)
+│   Visualizations│
+└────────┬────────┘
+         │ WebSocket/REST
+┌────────▼────────┐
+│  Backend API    │ (Go)
+│  - Gadget mgmt  │
+│  - Output parse │
+│  - Auth/RBAC    │
+└────────┬────────┘
+         │ gRPC API
+┌────────▼────────┐
+│ Inspektor-Gadget│ (DaemonSet)
+│  on K8s cluster │
+└─────────────────┘
+
+Key challenges you'll face
+
+Long-running gadgets: Many gadgets are streaming/continuous. You'll need WebSockets or SSE for real-time updates
+Security: These are privileged operations. You need strong RBAC and audit logging
+Multi-node coordination: Gadgets run on multiple nodes - aggregating/correlating data is complex
+Output formats: Different gadgets have different output schemas
+Resource management: eBPF programs consume resources - need limits and monitoring
+
+What's relatively easy
+
+Most gadgets output JSON, which is easy to parse
+The gadget ecosystem is well-documented
+You can start with read-only operations (trace, snapshot) before implementing profile/advise gadgets
+Visualizations: Many gadgets produce time-series or event data that map well to standard charts
+
+
+I want to add all available gadgets to the view but for now I just want trace_tcp gadget can be run.

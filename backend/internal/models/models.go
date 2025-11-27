@@ -6,9 +6,10 @@ import "time"
 type GadgetType string
 
 const (
-	GadgetTraceExec    GadgetType = "trace_exec"
-	GadgetTraceTCP     GadgetType = "trace_tcp"
-	GadgetSnapshotProc GadgetType = "snapshot_process"
+	GadgetTraceSNI       GadgetType = "trace_sni"
+	GadgetTraceTCP       GadgetType = "trace_tcp"
+	GadgetSnapshotProc   GadgetType = "snapshot_process"
+	GadgetSnapshotSocket GadgetType = "snapshot_socket"
 )
 
 // GadgetRequest represents a request to run a gadget
@@ -46,8 +47,8 @@ type GadgetOutput struct {
 	EventType string                 `json:"eventType"`
 }
 
-// TraceExecEvent represents a trace exec event
-type TraceExecEvent struct {
+// TraceSNIEvent represents a trace SNI event
+type TraceSNIEvent struct {
 	Timestamp string `json:"timestamp"`
 	Node      string `json:"node"`
 	Namespace string `json:"namespace"`
@@ -55,11 +56,9 @@ type TraceExecEvent struct {
 	Container string `json:"container"`
 	Comm      string `json:"comm"`
 	PID       int32  `json:"pid"`
-	PPID      int32  `json:"ppid"`
 	UID       int32  `json:"uid"`
 	GID       int32  `json:"gid"`
-	Args      string `json:"args"`
-	RetVal    int32  `json:"retval"`
+	Name      string `json:"name"` // SNI server name
 }
 
 // TraceTCPEvent represents a trace tcp event
@@ -89,4 +88,20 @@ type SnapshotProcess struct {
 	TID       int32  `json:"tid"`
 	UID       int32  `json:"uid"`
 	GID       int32  `json:"gid"`
+}
+
+// SnapshotSocket represents a socket snapshot
+type SnapshotSocket struct {
+	Node      string `json:"node"`
+	Namespace string `json:"namespace"`
+	Pod       string `json:"pod"`
+	Container string `json:"container"`
+	Protocol  string `json:"protocol"`
+	LocalAddr string `json:"localAddr"`
+	LocalPort uint16 `json:"localPort"`
+	RemoteAddr string `json:"remoteAddr"`
+	RemotePort uint16 `json:"remotePort"`
+	Status    string `json:"status"`
+	Inode     uint64 `json:"inode"`
+	UID       uint32 `json:"uid"`
 }
