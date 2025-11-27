@@ -3,14 +3,20 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Copy go.mod and go.sum first for better caching
-COPY go.mod go.sum ./
+# Copy go.mod first
+COPY go.mod ./
 
-# Download dependencies separately (this helps with cross-platform builds)
-RUN go mod download && go mod verify
+# Copy go.sum if it exists, otherwise create empty
+COPY go.sum* ./
 
 # Copy the rest of the source code
 COPY . .
+
+# Run go mod tidy to update dependencies
+RUN go mod tidy
+
+# Download dependencies separately (this helps with cross-platform builds)
+RUN go mod download && go mod verify
 
 # Build the application (TARGETARCH is automatically set by Docker/Podman)
 ARG TARGETARCH

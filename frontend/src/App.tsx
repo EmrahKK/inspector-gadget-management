@@ -10,12 +10,15 @@ import {
   X,
   Zap,
   Network,
-  Lock
+  Lock,
+  History
 } from 'lucide-react';
 import { GadgetCard } from './components/GadgetCard';
 import { Runner } from './components/Runner';
 import { ActiveSessionsView } from './components/ActiveSessionsView';
 import { SessionPicker } from './components/SessionPicker';
+import { HistoryView } from './components/HistoryView';
+import { SessionReplay } from './components/SessionReplay';
 import { GadgetRequest, GadgetSession, GadgetOutput as GadgetOutputType } from './types';
 import { api } from './services/api';
 
@@ -39,6 +42,7 @@ function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
   const [showSessionPicker, setShowSessionPicker] = useState(false);
   const [sessionPickerGadget, setSessionPickerGadget] = useState<Gadget | null>(null);
+  const [replaySessionId, setReplaySessionId] = useState<string | null>(null);
 
   // Define available gadgets
   const gadgets: Gadget[] = [
@@ -332,7 +336,8 @@ function App() {
               { id: 'snapshot', label: 'Snapshot', icon: Camera },
               { id: 'profile', label: 'Profile', icon: Cpu },
               { id: 'audit', label: 'Security Audit', icon: Shield },
-              { id: 'sessions', label: `Active Sessions (${runningCount})`, icon: Zap }
+              { id: 'sessions', label: `Active Sessions (${runningCount})`, icon: Zap },
+              { id: 'history', label: 'History', icon: History }
             ].map(cat => (
               <button
                 key={cat.id}
@@ -398,6 +403,10 @@ function App() {
             onSelectSession={handleSelectSession}
             onStopSession={handleStopSession}
           />
+        ) : selectedCategory === 'history' ? (
+          <HistoryView
+            onReplaySession={(sessionId) => setReplaySessionId(sessionId)}
+          />
         ) : (
           <div className="flex-grow p-8 overflow-y-auto">
             <div className="max-w-6xl mx-auto">
@@ -455,6 +464,14 @@ function App() {
               setShowSessionPicker(false);
               setSessionPickerGadget(null);
             }}
+          />
+        )}
+
+        {/* Session Replay Modal */}
+        {replaySessionId && (
+          <SessionReplay
+            sessionId={replaySessionId}
+            onClose={() => setReplaySessionId(null)}
           />
         )}
       </div>

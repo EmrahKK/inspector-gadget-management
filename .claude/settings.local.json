@@ -34,7 +34,9 @@
       "Bash(npm install)",
       "Bash(kubectl describe:*)",
       "Bash(kubectl run:*)",
-      "Bash(/opt/homebrew/bin/npm run build)"
+      "Bash(/opt/homebrew/bin/npm run build)",
+      "Bash(kubectl scale:*)",
+      "Bash(kubectl delete:*)"
     ],
     "deny": [],
     "ask": []

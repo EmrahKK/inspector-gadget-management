@@ -6,17 +6,20 @@ metadata:
   name: gadget-management
   namespace: gadget-management
   annotations:
-    traefik.ingress.kubernetes.io/rewrite-target: /
+    # Remove global rewrite-target to preserve paths
     traefik.ingress.kubernetes.io/proxy-read-timeout: "3600"
     traefik.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    # WebSocket support
-    traefik.ingress.kubernetes.io/websocket-services: "backend"
+    # Session affinity for sticky sessions
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/session-cookie-name: "backend-session"
 spec:
   ingressClassName: traefik
   rules:
     - host: gadget-management.lima.local  # Change this to your domain
       http:
         paths:
+          # Route everything to frontend - frontend nginx will proxy to backend
+          # This preserves the existing architecture while enabling sticky sessions
           - path: /
             pathType: Prefix
             backend:

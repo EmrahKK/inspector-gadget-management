@@ -6,6 +6,8 @@ metadata:
   labels:
     app: gadget-backend
 spec:
+  # Phase 2: With distributed session management, you can now scale horizontally
+  # Example: kubectl scale deployment backend -n gadget-management --replicas=3
   replicas: 1
   selector:
     matchLabels:
@@ -27,6 +29,14 @@ spec:
           env:
             - name: PORT
               value: "8080"
+            # Redis for session store and event streaming
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: REDIS_PASSWORD
+              value: ""
+            # TimescaleDB for historical data
+            - name: POSTGRES_URL
+              value: "postgres://gadget:gadget_password_change_in_production@timescaledb:5432/gadget_events"
           livenessProbe:
             httpGet:
               path: /health

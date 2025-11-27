@@ -28,4 +28,34 @@ export const api = {
     const host = import.meta.env.VITE_WS_URL || window.location.host;
     return `${protocol}//${host}/ws/${sessionId}`;
   },
+
+  // Historical data queries
+  async queryEvents(filters: {
+    event_type?: string;
+    namespace?: string;
+    session_id?: string;
+    start_time?: string;
+    end_time?: string;
+    limit?: number;
+  }): Promise<any[]> {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    const response = await axios.get(`${API_BASE_URL}/events?${params.toString()}`);
+    return response.data || [];
+  },
+
+  async getSessionEvents(sessionId: string, limit?: number): Promise<any[]> {
+    const params = limit ? `?limit=${limit}` : '';
+    const response = await axios.get(`${API_BASE_URL}/sessions/${sessionId}/events${params}`);
+    return response.data || [];
+  },
+
+  async getSessionStats(sessionId: string): Promise<any> {
+    const response = await axios.get(`${API_BASE_URL}/sessions/${sessionId}/stats`);
+    return response.data;
+  },
 };
