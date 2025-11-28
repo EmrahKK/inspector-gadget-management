@@ -18,12 +18,12 @@ echo "Using container runtime: $CONTAINER_RUNTIME"
 DOCKER_USERNAME="emrahkk"
 
 # Image names
-BACKEND_IMAGE="$DOCKER_USERNAME/gadget-backend:latest"
-FRONTEND_IMAGE="$DOCKER_USERNAME/gadget-frontend:latest"
+BACKEND_IMAGE="$DOCKER_USERNAME/penny-backend:latest"
+FRONTEND_IMAGE="$DOCKER_USERNAME/penny-frontend:latest"
 
 echo "Tagging images..."
-$CONTAINER_RUNTIME tag gadget-backend:latest $BACKEND_IMAGE
-$CONTAINER_RUNTIME tag gadget-frontend:latest $FRONTEND_IMAGE
+$CONTAINER_RUNTIME tag penny-backend:latest $BACKEND_IMAGE
+$CONTAINER_RUNTIME tag penny-frontend:latest $FRONTEND_IMAGE
 
 echo "Pushing images to Docker Hub..."
 echo "Pushing backend..."

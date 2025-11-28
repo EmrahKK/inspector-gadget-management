@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Deploying Inspector Gadget Management to Kubernetes..."
+echo "Deploying PENNY to Kubernetes..."
 
 # Apply Kubernetes manifests
 echo "Creating namespace..."
@@ -23,16 +23,16 @@ echo ""
 echo "Deployment completed!"
 echo ""
 echo "Checking deployment status..."
-kubectl get pods -n gadget-management
+kubectl get pods -n penny
 
 echo ""
 echo "Services:"
-kubectl get svc -n gadget-management
+kubectl get svc -n penny
 
 echo ""
 echo "Access the application:"
 echo "  NodePort: http://<node-ip>:30080"
-echo "  Port-forward: kubectl port-forward -n gadget-management svc/frontend 3000:80"
+echo "  Port-forward: kubectl port-forward -n penny svc/frontend 3000:80"
 echo "               Then open http://localhost:3000"
 echo ""
 echo "To deploy Ingress (optional):"

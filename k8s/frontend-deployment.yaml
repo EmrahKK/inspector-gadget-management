@@ -2,22 +2,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: gadget-management
+  namespace: penny
   labels:
-    app: gadget-frontend
+    app: penny-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gadget-frontend
+      app: penny-frontend
   template:
     metadata:
       labels:
-        app: gadget-frontend
+        app: penny-frontend
     spec:
       containers:
         - name: frontend
-          image: emrahkk/gadget-frontend:latest
+          image: emrahkk/penny-frontend:latest
           imagePullPolicy: Always
           ports:
             - name: http
@@ -47,9 +47,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: gadget-management
+  namespace: penny
   labels:
-    app: gadget-frontend
+    app: penny-frontend
 spec:
   type: NodePort
   ports:
@@ -59,4 +59,4 @@ spec:
       name: http
       nodePort: 30080
   selector:
-    app: gadget-frontend
+    app: penny-frontend

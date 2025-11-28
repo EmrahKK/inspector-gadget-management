@@ -2,25 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: gadget-management
+  namespace: penny
   labels:
-    app: gadget-backend
+    app: penny-backend
 spec:
   # Phase 2: With distributed session management, you can now scale horizontally
-  # Example: kubectl scale deployment backend -n gadget-management --replicas=3
+  # Example: kubectl scale deployment backend -n penny --replicas=3
   replicas: 1
   selector:
     matchLabels:
-      app: gadget-backend
+      app: penny-backend
   template:
     metadata:
       labels:
-        app: gadget-backend
+        app: penny-backend
     spec:
-      serviceAccountName: gadget-backend
+      serviceAccountName: penny-backend
       containers:
         - name: backend
-          image: emrahkk/gadget-backend:latest
+          image: emrahkk/penny-backend:latest
           imagePullPolicy: Always
           ports:
             - name: http
@@ -61,9 +61,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: gadget-management
+  namespace: penny
   labels:
-    app: gadget-backend
+    app: penny-backend
 spec:
   type: ClusterIP
   ports:
@@ -72,4 +72,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: gadget-backend
+    app: penny-backend

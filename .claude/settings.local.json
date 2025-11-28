@@ -36,7 +36,8 @@
       "Bash(kubectl run:*)",
       "Bash(/opt/homebrew/bin/npm run build)",
       "Bash(kubectl scale:*)",
-      "Bash(kubectl delete:*)"
+      "Bash(kubectl delete:*)",
+      "Bash(./deploy.sh:*)"
     ],
     "deny": [],
     "ask": []

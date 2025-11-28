@@ -1,6 +1,6 @@
 # Demo Services for TCP Flow Visualization
 
-Bu klasör, Inspector Gadget Management arayüzünde TCP flow haritasını test etmek için 3 demo servis içerir.
+Bu klasör, PENNY arayüzünde TCP flow haritasını test etmek için 3 demo servis içerir.
 
 ## Servisler
 
@@ -81,12 +81,11 @@ kubectl logs -n demo -l app=bananas -f
 
 ### TCP Trace Başlat
 
-Inspector Gadget Management arayüzünde:
-1. "Start Session" butonuna tıklayın
+PENNY arayüzünde:
+1. "Trace TCP" gadget'ını seçin
 2. Namespace: `demo` seçin
 3. "Start" butonuna tıklayın
-4. "Flow Diagram" görünümüne geçin
-5. TCP bağlantılarını görselleştirin
+4. "Summary View" görünümüne geçerek TCP bağlantılarını görselleştirin
 
 ### Servislere Erişim
 

@@ -18,36 +18,36 @@ ARCH=$(uname -m)
 if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
     # On Apple Silicon, try native ARM64 first (faster, more stable)
     echo "Detected ARM64 architecture"
-    echo "Building Inspector Gadget Management images for linux/arm64..."
+    echo "Building PENNY images for linux/arm64..."
     PLATFORM="linux/arm64"
     TARGETARCH="arm64"
 else
-    echo "Building Inspector Gadget Management images for linux/amd64..."
+    echo "Building PENNY images for linux/amd64..."
     PLATFORM="linux/amd64"
     TARGETARCH="amd64"
 fi
 
 # Build backend
 echo "Building backend image..."
-$CONTAINER_RUNTIME build --platform $PLATFORM --build-arg TARGETARCH=$TARGETARCH -t gadget-backend:latest ./backend
+$CONTAINER_RUNTIME build --platform $PLATFORM --build-arg TARGETARCH=$TARGETARCH -t penny-backend:latest ./backend
 
 # Build frontend
 echo "Building frontend image..."
-$CONTAINER_RUNTIME build --platform $PLATFORM -t gadget-frontend:latest ./frontend
+$CONTAINER_RUNTIME build --platform $PLATFORM -t penny-frontend:latest ./frontend
 
 echo "Build completed successfully!"
 echo ""
 echo "Images built:"
-echo "  - gadget-backend:latest"
-echo "  - gadget-frontend:latest"
+echo "  - penny-backend:latest"
+echo "  - penny-frontend:latest"
 echo ""
 echo "For k3s, import images with:"
-echo "  $CONTAINER_RUNTIME save gadget-backend:latest | sudo k3s ctr images import -"
-echo "  $CONTAINER_RUNTIME save gadget-frontend:latest | sudo k3s ctr images import -"
+echo "  $CONTAINER_RUNTIME save penny-backend:latest | sudo k3s ctr images import -"
+echo "  $CONTAINER_RUNTIME save penny-frontend:latest | sudo k3s ctr images import -"
 echo ""
 echo "For k3d:"
-echo "  k3d image import gadget-backend:latest gadget-frontend:latest -c <cluster-name>"
+echo "  k3d image import penny-backend:latest penny-frontend:latest -c <cluster-name>"
 echo ""
 echo "For minikube:"
-echo "  minikube image load gadget-backend:latest"
-echo "  minikube image load gadget-frontend:latest"
+echo "  minikube image load penny-backend:latest"
+echo "  minikube image load penny-frontend:latest"

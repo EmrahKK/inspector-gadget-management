@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: timescaledb-secret
-  namespace: gadget-management
+  namespace: penny
 type: Opaque
 stringData:
   POSTGRES_PASSWORD: "gadget_password_change_in_production"
@@ -13,7 +13,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: timescaledb-data
-  namespace: gadget-management
+  namespace: penny
 spec:
   accessModes:
     - ReadWriteOnce
@@ -25,7 +25,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: timescaledb
-  namespace: gadget-management
+  namespace: penny
   labels:
     app: timescaledb
 spec:
@@ -96,7 +96,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: timescaledb
-  namespace: gadget-management
+  namespace: penny
   labels:
     app: timescaledb
 spec:
@@ -112,7 +112,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: timescaledb-init
-  namespace: gadget-management
+  namespace: penny
 spec:
   template:
     spec:
