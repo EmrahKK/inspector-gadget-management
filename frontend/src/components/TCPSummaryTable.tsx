@@ -178,7 +178,7 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
 
   if (outputs.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-slate-500">
+      <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-500">
         <Activity size={48} className="mb-4 opacity-50" />
         <p>No connection data available yet...</p>
         <p className="text-sm mt-2">Start the gadget to collect TCP connection statistics</p>
@@ -187,18 +187,18 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-900">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900">
       {/* Header with Export Button */}
-      <div className="border-b border-slate-700 p-4 flex items-center justify-between bg-slate-800/50">
+      <div className="border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
         <div>
-          <h3 className="text-lg font-semibold text-white">Connection Summary</h3>
-          <p className="text-sm text-slate-400 mt-1">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Connection Summary</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             Aggregated statistics from {outputs.length} TCP events
           </p>
         </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-400 rounded font-medium transition-colors"
         >
           <Download size={16} />
           Export CSV
@@ -217,45 +217,45 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
             return (
               <div
                 key={index}
-                className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden"
+                className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
               >
                 {/* Source Header */}
-                <div className="bg-slate-800/80 p-4 border-b border-slate-700">
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-700">
                   <div className="flex items-start justify-between">
                     <div className="flex-grow">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-white font-semibold text-base">{source.source}</h4>
-                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded font-mono">
+                        <h4 className="text-slate-900 dark:text-white font-semibold text-base">{source.source}</h4>
+                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded font-mono">
                           {source.container}
                         </span>
-                        <span className="text-xs px-2 py-1 bg-slate-900 text-slate-400 rounded font-mono">
+                        <span className="text-xs px-2 py-1 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400 rounded font-mono">
                           {source.namespace}
                         </span>
                       </div>
                       <div className="flex gap-6 mt-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400">Total:</span>
-                          <span className="text-blue-400 font-semibold">
+                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
+                          <span className="text-blue-700 dark:text-blue-400 font-semibold">
                             {source.totalConnections}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400">Accepts:</span>
-                          <span className="text-green-400 font-semibold">
+                          <span className="text-slate-600 dark:text-slate-400">Accepts:</span>
+                          <span className="text-green-700 dark:text-green-400 font-semibold">
                             {source.acceptCount}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400">Connects:</span>
-                          <span className="text-purple-400 font-semibold">
+                          <span className="text-slate-600 dark:text-slate-400">Connects:</span>
+                          <span className="text-purple-700 dark:text-purple-400 font-semibold">
                             {source.connectCount}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <AlertCircle size={14} className="text-red-400" />
-                          <span className="text-slate-400">Errors:</span>
+                          <AlertCircle size={14} className="text-red-600 dark:text-red-400" />
+                          <span className="text-slate-600 dark:text-slate-400">Errors:</span>
                           <span className={`font-semibold ${
-                            source.totalErrors > 0 ? 'text-red-400' : 'text-slate-500'
+                            source.totalErrors > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'
                           }`}>
                             {source.totalErrors}
                             {source.totalErrors > 0 && (
@@ -270,37 +270,37 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
 
                 {/* Destinations List */}
                 {destinations.length > 0 && (
-                  <div className="divide-y divide-slate-700">
+                  <div className="divide-y divide-slate-200 dark:divide-slate-700">
                     {destinations.slice(0, 10).map((dest, destIndex) => (
                       <div
                         key={destIndex}
-                        className="p-3 hover:bg-slate-700/30 transition-colors"
+                        className="p-3 hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-grow">
-                            <ArrowRight size={14} className="text-slate-500 flex-shrink-0" />
-                            <span className="font-mono text-sm text-slate-300 break-all">
+                            <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                            <span className="font-mono text-sm text-slate-700 dark:text-slate-300 break-all">
                               {dest.destination}
                             </span>
                             <span className={`text-xs px-2 py-0.5 rounded ${
                               dest.type === 'accept'
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-purple-500/20 text-purple-400'
+                                ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                                : 'bg-purple-500/20 text-purple-700 dark:text-purple-400'
                             }`}>
                               {dest.type}
                             </span>
                           </div>
                           <div className="flex items-center gap-4 flex-shrink-0 ml-4">
                             <div className="text-sm">
-                              <span className="text-slate-400">Connections: </span>
-                              <span className="text-blue-400 font-semibold">
+                              <span className="text-slate-600 dark:text-slate-400">Connections: </span>
+                              <span className="text-blue-700 dark:text-blue-400 font-semibold">
                                 {dest.connections}
                               </span>
                             </div>
                             {dest.errors > 0 && (
                               <div className="text-sm">
-                                <span className="text-slate-400">Errors: </span>
-                                <span className="text-red-400 font-semibold">
+                                <span className="text-slate-600 dark:text-slate-400">Errors: </span>
+                                <span className="text-red-600 dark:text-red-400 font-semibold">
                                   {dest.errors}
                                 </span>
                               </div>
@@ -310,7 +310,7 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
                       </div>
                     ))}
                     {destinations.length > 10 && (
-                      <div className="p-3 text-center text-sm text-slate-500">
+                      <div className="p-3 text-center text-sm text-slate-500 dark:text-slate-500">
                         ... and {destinations.length - 10} more destinations
                       </div>
                     )}
@@ -318,7 +318,7 @@ export const TCPSummaryTable: React.FC<Props> = ({ outputs }) => {
                 )}
 
                 {destinations.length === 0 && (
-                  <div className="p-4 text-center text-slate-500 text-sm">
+                  <div className="p-4 text-center text-slate-500 dark:text-slate-500 text-sm">
                     No destination data available
                   </div>
                 )}

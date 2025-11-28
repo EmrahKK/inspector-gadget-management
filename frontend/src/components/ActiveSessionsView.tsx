@@ -58,13 +58,13 @@ export const ActiveSessionsView: React.FC<Props> = ({
       <div className="flex-grow p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Active Sessions (0)</h2>
-            <p className="text-slate-400">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Active Sessions (0)</h2>
+            <p className="text-slate-600 dark:text-slate-400">
               No active sessions running. Start a gadget to see it here.
             </p>
           </div>
 
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
             <Activity size={64} className="mb-4 opacity-50" />
             <p className="text-lg">No active sessions</p>
             <p className="text-sm mt-2">Select a gadget from the catalog to start monitoring</p>
@@ -78,26 +78,26 @@ export const ActiveSessionsView: React.FC<Props> = ({
     <div className="flex-grow p-8 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
             Active Sessions ({sessions.length})
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400">
             All running gadget sessions across your cluster. Click "View" to see details.
           </p>
         </div>
 
         {/* Sessions Table */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-slate-900 border-b border-slate-700">
+            <thead className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Gadget</th>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Namespace</th>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Pod</th>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Started</th>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Events</th>
-                <th className="text-left p-4 text-slate-300 font-semibold text-sm">Status</th>
-                <th className="text-right p-4 text-slate-300 font-semibold text-sm">Actions</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Gadget</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Namespace</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Pod</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Started</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Events</th>
+                <th className="text-left p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Status</th>
+                <th className="text-right p-4 text-slate-700 dark:text-slate-300 font-semibold text-sm">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -108,21 +108,21 @@ export const ActiveSessionsView: React.FC<Props> = ({
                 return (
                   <tr
                     key={session.id}
-                    className={`border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
+                    className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${
                       index === sessions.length - 1 ? 'border-b-0' : ''
                     }`}
                   >
                     {/* Gadget */}
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        {gadgetInfo && <gadgetInfo.icon size={20} className="text-blue-400" />}
-                        <span className="text-white font-medium">{gadgetInfo?.title || session.type}</span>
+                        {gadgetInfo && <gadgetInfo.icon size={20} className="text-blue-600 dark:text-blue-400" />}
+                        <span className="text-slate-900 dark:text-white font-medium">{gadgetInfo?.title || session.type}</span>
                       </div>
                     </td>
 
                     {/* Namespace */}
                     <td className="p-4">
-                      <span className="text-xs px-2 py-1 bg-slate-900 text-slate-300 rounded font-mono">
+                      <span className="text-xs px-2 py-1 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded font-mono">
                         {session.namespace || 'All'}
                       </span>
                     </td>
@@ -130,17 +130,17 @@ export const ActiveSessionsView: React.FC<Props> = ({
                     {/* Pod */}
                     <td className="p-4">
                       {session.podName ? (
-                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded font-mono">
+                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded font-mono">
                           {session.podName}
                         </span>
                       ) : (
-                        <span className="text-slate-500 text-sm">All pods</span>
+                        <span className="text-slate-500 dark:text-slate-500 text-sm">All pods</span>
                       )}
                     </td>
 
                     {/* Started */}
                     <td className="p-4">
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                         <Clock size={14} />
                         {formatTimeAgo(session.startTime || '')}
                       </div>
@@ -148,7 +148,7 @@ export const ActiveSessionsView: React.FC<Props> = ({
 
                     {/* Events */}
                     <td className="p-4">
-                      <div className="text-slate-300 font-mono text-sm">
+                      <div className="text-slate-700 dark:text-slate-300 font-mono text-sm">
                         {eventCount.toLocaleString()}
                       </div>
                     </td>
@@ -160,7 +160,7 @@ export const ActiveSessionsView: React.FC<Props> = ({
                           <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
-                        <span className="text-green-400 text-sm capitalize">{session.status}</span>
+                        <span className="text-green-600 dark:text-green-400 text-sm capitalize">{session.status}</span>
                       </div>
                     </td>
 
@@ -169,14 +169,14 @@ export const ActiveSessionsView: React.FC<Props> = ({
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => onSelectSession(session.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded text-sm font-medium transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-400 rounded text-sm font-medium transition-colors"
                         >
                           <Play size={14} />
                           View
                         </button>
                         <button
                           onClick={() => onStopSession(session.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded text-sm font-medium transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-400 rounded text-sm font-medium transition-colors"
                         >
                           <X size={14} />
                           Stop

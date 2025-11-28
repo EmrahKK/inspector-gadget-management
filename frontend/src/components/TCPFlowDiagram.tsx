@@ -376,6 +376,8 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
 
   // Draw node
   const drawNode = (ctx: CanvasRenderingContext2D, node: Node) => {
+    const isDark = document.documentElement.classList.contains('dark');
+
     // Draw glow
     ctx.shadowBlur = 10;
     ctx.shadowColor = node.color;
@@ -417,7 +419,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
         ctx.arc(mx, my, 8, 0, Math.PI * 2);
         ctx.fillStyle = node.color;
         ctx.fill();
-        ctx.strokeStyle = '#fff';
+        ctx.strokeStyle = isDark ? '#fff' : '#000';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
@@ -427,7 +429,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
       ctx.fillStyle = node.color;
       ctx.fill();
-      ctx.strokeStyle = '#fff';
+      ctx.strokeStyle = isDark ? '#fff' : '#000';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -438,18 +440,18 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
     if (node.connections > 0) {
       ctx.beginPath();
       ctx.arc(node.x + node.radius - 5, node.y - node.radius + 5, 8, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = isDark ? '#fff' : '#000';
       ctx.fill();
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = isDark ? '#000' : '#fff';
       ctx.font = 'bold 10px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(node.connections), node.x + node.radius - 5, node.y - node.radius + 5);
     }
 
-    // Draw label
+    // Draw label - dark text for light mode, light text for dark mode
     if (showLabels) {
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = isDark ? '#fff' : '#000';
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -461,7 +463,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
 
       // Add pod count for grouped nodes
       if (node.type === 'pod' && node.podCount && node.podCount > 1) {
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = isDark ? '#fff' : '#000';
         ctx.font = '11px Arial';
         ctx.fillText(`(${node.podCount} pods)`, node.x, node.y + node.radius + 5 + lines.length * 14);
       }
@@ -477,6 +479,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
 
     const hasError = conn.errorCount > 0;
     const isAccept = conn.eventType === 'accept';
+    const isDark = document.documentElement.classList.contains('dark');
 
     // Different colors for accept vs connect flows
     const flowColor = isAccept ? '#9C27B0' : '#4CAF50'; // Purple for accept, green for connect
@@ -491,13 +494,23 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       ctx.lineWidth = 3;
     } else if (!hasError && showErrorsOnly) {
       // Dim normal connections when highlighting errors
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+      if (isDark) {
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+      } else {
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
+      }
       ctx.lineWidth = Math.max(1, Math.min(5, conn.count / 10));
     } else {
-      // Normal white gradient
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+      // Normal gradient - dark lines for light mode, light lines for dark mode
+      if (isDark) {
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+      } else {
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
+      }
       ctx.lineWidth = Math.max(1, Math.min(5, conn.count / 10));
     }
 
@@ -520,10 +533,13 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
         ? `${conn.count} flows (${conn.errorCount} errors)`
         : `${conn.count} flows`;
       const textWidth = ctx.measureText(text).width;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+
+      // Label background - light background for light mode, dark for dark mode
+      ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)';
       ctx.fillRect(midX - textWidth / 2 - 4, midY - 8, textWidth + 8, 16);
 
-      ctx.fillStyle = hasError ? '#ff5252' : '#fff';
+      // Label text - white for dark mode, dark for light mode
+      ctx.fillStyle = hasError ? '#ff5252' : (isDark ? '#fff' : '#000');
       ctx.fillText(text, midX, midY);
     }
 
@@ -605,10 +621,16 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Clear canvas with dark slate gradient background
+    // Clear canvas with gradient background (light or dark based on theme)
+    const isDark = document.documentElement.classList.contains('dark');
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#0f172a'); // slate-900
-    gradient.addColorStop(1, '#1e293b'); // slate-800
+    if (isDark) {
+      gradient.addColorStop(0, '#0f172a'); // slate-900
+      gradient.addColorStop(1, '#1e293b'); // slate-800
+    } else {
+      gradient.addColorStop(0, '#f1f5f9'); // slate-100
+      gradient.addColorStop(1, '#e2e8f0'); // slate-200
+    }
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -797,18 +819,18 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
   }, [nodes, connections, showLabels, isPaused, isFullscreen, zoom]);
 
   return (
-    <div className={isFullscreen ? 'fixed inset-0 z-[9999] bg-gradient-to-br from-slate-900 to-slate-800' : 'relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden h-full'}>
+    <div className={isFullscreen ? 'fixed inset-0 z-[9999] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800' : 'relative bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 rounded-lg overflow-hidden h-full'}>
       {/* Controls */}
       <div className="absolute top-3 left-3 z-10 flex gap-2 flex-wrap max-w-[calc(100%-180px)]">
         <button
           onClick={() => setShowLabels(!showLabels)}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-3 py-1.5 rounded text-sm transition-colors"
         >
           {showLabels ? 'Hide Labels' : 'Show Labels'}
         </button>
         <button
           onClick={() => setIsPaused(!isPaused)}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-3 py-1.5 rounded text-sm transition-colors"
         >
           {isPaused ? 'Resume' : 'Pause'}
         </button>
@@ -816,8 +838,8 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
           onClick={() => setShowErrorsOnly(!showErrorsOnly)}
           className={`px-3 py-1.5 rounded text-sm transition-colors ${
             showErrorsOnly
-              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-              : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+              ? 'bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30'
+              : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/30'
           }`}
         >
           {showErrorsOnly ? 'Normal View' : 'Highlight Errors'}
@@ -826,36 +848,36 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
           onClick={() => setIsFullscreen(!isFullscreen)}
           className={`px-3 py-1.5 rounded text-sm transition-colors ${
             isFullscreen
-              ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-              : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+              ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400 hover:bg-orange-500/30'
+              : 'bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/30'
           }`}
         >
           {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
         <button
           onClick={handleResetLayout}
-          className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/30 px-3 py-1.5 rounded text-sm transition-colors"
           title="Reset node positions to default layout"
         >
           Reset Layout
         </button>
         <button
           onClick={handleZoomIn}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-3 py-1.5 rounded text-sm transition-colors"
           title="Zoom In"
         >
           +
         </button>
         <button
           onClick={handleZoomOut}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-3 py-1.5 rounded text-sm transition-colors"
           title="Zoom Out"
         >
           -
         </button>
         <button
           onClick={handleZoomReset}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm transition-colors"
+          className="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-3 py-1.5 rounded text-sm transition-colors"
           title="Reset Zoom"
         >
           {Math.round(zoom * 100)}%
@@ -873,53 +895,53 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
       />
 
       {/* Stats */}
-      <div className="absolute bottom-3 right-3 bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg flex gap-4 text-xs text-slate-300 border border-slate-700">
+      <div className="absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg flex gap-4 text-xs text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
         <div className="flex gap-1.5">
-          <span className="text-slate-500">Nodes:</span>
-          <span className="font-bold text-green-400">{stats.nodes}</span>
+          <span className="text-slate-500 dark:text-slate-500">Nodes:</span>
+          <span className="font-bold text-green-600 dark:text-green-400">{stats.nodes}</span>
         </div>
         <div className="flex gap-1.5">
-          <span className="text-slate-500">Connections:</span>
-          <span className="font-bold text-blue-400">{stats.connections}</span>
+          <span className="text-slate-500 dark:text-slate-500">Connections:</span>
+          <span className="font-bold text-blue-600 dark:text-blue-400">{stats.connections}</span>
         </div>
         <div className="flex gap-1.5">
-          <span className="text-slate-500">Active Flows:</span>
-          <span className="font-bold text-purple-400">{stats.flows}</span>
+          <span className="text-slate-500 dark:text-slate-500">Active Flows:</span>
+          <span className="font-bold text-purple-600 dark:text-purple-400">{stats.flows}</span>
         </div>
         <div className="flex gap-1.5">
-          <span className="text-slate-500">Errors:</span>
-          <span className={`font-bold ${stats.errors > 0 ? 'text-red-400' : 'text-green-400'}`}>
+          <span className="text-slate-500 dark:text-slate-500">Errors:</span>
+          <span className={`font-bold ${stats.errors > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
             {stats.errors}
           </span>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="absolute top-3 right-3 bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-300 border border-slate-700">
-        <div className="font-bold mb-2 text-white">Legend</div>
+      <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+        <div className="font-bold mb-2 text-slate-900 dark:text-white">Legend</div>
         <div className="flex items-center gap-2 mb-1.5">
-          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.pod }} />
+          <div className="w-4 h-4 rounded-full border-2 border-slate-900 dark:border-white" style={{ backgroundColor: nodeColors.pod }} />
           <span>Kubernetes Pod</span>
         </div>
         <div className="flex items-center gap-2 mb-1.5">
-          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.service }} />
+          <div className="w-4 h-4 rounded-full border-2 border-slate-900 dark:border-white" style={{ backgroundColor: nodeColors.service }} />
           <span>Internal Service</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full border-2 border-white" style={{ backgroundColor: nodeColors.external }} />
+          <div className="w-4 h-4 rounded-full border-2 border-slate-900 dark:border-white" style={{ backgroundColor: nodeColors.external }} />
           <span>External IP</span>
         </div>
       </div>
 
       {/* Namespace Filter */}
       {availableNamespaces.size > 0 && (
-        <div className="absolute bottom-3 left-3 bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-300 border border-slate-700 max-w-[250px] max-h-[300px] overflow-y-auto">
-          <div className="font-bold mb-2 flex justify-between items-center text-white">
+        <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-4 py-3 rounded-lg text-xs text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 max-w-[250px] max-h-[300px] overflow-y-auto">
+          <div className="font-bold mb-2 flex justify-between items-center text-slate-900 dark:text-white">
             <span>Namespace Filter</span>
             {selectedNamespaces.size > 0 && (
               <button
                 onClick={clearNamespaceFilter}
-                className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-0.5 rounded text-[10px] ml-2 transition-colors"
+                className="bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30 px-2 py-0.5 rounded text-[10px] ml-2 transition-colors"
               >
                 Clear ({selectedNamespaces.size})
               </button>
@@ -935,7 +957,7 @@ export const TCPFlowDiagram: React.FC<Props> = ({ outputs }) => {
                   className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
                     selectedNamespaces.has(ns)
                       ? 'bg-green-500/20 border border-green-500/50'
-                      : 'bg-slate-700/50 hover:bg-slate-700'
+                      : 'bg-slate-300 dark:bg-slate-700/50 hover:bg-slate-400 dark:hover:bg-slate-700'
                   }`}
                 >
                   <input

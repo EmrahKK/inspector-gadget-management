@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Activity,
-  Search,
   BarChart2,
   Camera,
   Cpu,
@@ -19,6 +18,8 @@ import { ActiveSessionsView } from './components/ActiveSessionsView';
 import { SessionPicker } from './components/SessionPicker';
 import { HistoryView } from './components/HistoryView';
 import { SessionReplay } from './components/SessionReplay';
+import { ThemeToggle } from './components/ThemeToggle';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { GadgetRequest, GadgetSession, GadgetOutput as GadgetOutputType } from './types';
 import { api } from './services/api';
 
@@ -314,21 +315,21 @@ function App() {
   const runningCount = sessions.filter(s => s.status === 'running').length;
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
-      {/* Sidebar */}
-      <div className="w-64 border-r border-slate-800 flex flex-col bg-slate-900 flex-shrink-0">
-        <div className="p-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold flex items-center gap-2 text-white">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <Search size={18} className="text-white" />
-            </div>
-            Inspektor UI
-          </h1>
-        </div>
+    <ThemeProvider>
+      <div className="flex h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 font-sans selection:bg-blue-500/30 transition-colors">
+        {/* Sidebar */}
+        <div className="w-64 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50 dark:bg-slate-900 flex-shrink-0">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h1 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <img src="/logo.svg" alt="PENNY Logo" className="w-8 h-8" />
+              PENNY
+            </h1>
+            <ThemeToggle />
+          </div>
 
         <div className="flex-grow overflow-y-auto">
           <div className="p-4 space-y-1">
-            <div className="text-xs font-bold text-slate-500 uppercase px-2 mb-2">Catalog</div>
+            <div className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase px-2 mb-2">Catalog</div>
             {[
               { id: 'all', label: 'All Gadgets', icon: Box },
               { id: 'trace', label: 'Trace (Stream)', icon: Activity },
@@ -348,7 +349,7 @@ function App() {
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                   selectedCategory === cat.id
                     ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <cat.icon size={16} />
@@ -358,28 +359,28 @@ function App() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-500">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            Inspector Gadget UI
+            PENNY
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            v0.1.0
+            v0.4.0
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden">
+      <div className="flex-grow flex flex-col h-full overflow-hidden bg-white dark:bg-slate-950">
         {error && (
-          <div className="bg-red-500/20 border-b border-red-500/50 text-red-400 px-6 py-3 flex items-center justify-between">
+          <div className="bg-red-500/20 border-b border-red-500/50 text-red-600 dark:text-red-400 px-6 py-3 flex items-center justify-between">
             <span>
               <strong>Error:</strong> {error}
             </span>
             <button
               onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-300"
+              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
             >
               <X size={16} />
             </button>
@@ -408,17 +409,17 @@ function App() {
             onReplaySession={(sessionId) => setReplaySessionId(sessionId)}
           />
         ) : (
-          <div className="flex-grow p-8 overflow-y-auto">
+          <div className="flex-grow p-8 overflow-y-auto bg-white dark:bg-slate-950">
             <div className="max-w-6xl mx-auto">
               <div className="mb-8 flex justify-between items-end">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Gadget Catalog</h2>
-                  <p className="text-slate-400">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Gadget Catalog</h2>
+                  <p className="text-slate-600 dark:text-slate-400">
                     Select an eBPF tool to inspect your cluster capabilities.
                   </p>
                 </div>
                 {runningCount > 0 && (
-                  <div className="text-sm bg-slate-800 border border-green-500/30 text-green-400 px-3 py-1 rounded-full flex items-center gap-2 animate-pulse">
+                  <div className="text-sm bg-slate-100 dark:bg-slate-800 border border-green-500/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full flex items-center gap-2 animate-pulse">
                     <Zap size={14} fill="currentColor" />
                     {runningCount} gadget{runningCount > 1 ? 's' : ''} active in background
                   </div>
@@ -445,7 +446,7 @@ function App() {
               </div>
 
               {filteredGadgets.length === 0 && (
-                <div className="text-center text-slate-500 py-12">
+                <div className="text-center text-slate-500 dark:text-slate-500 py-12">
                   <p>No gadgets available in this category yet.</p>
                 </div>
               )}
@@ -476,6 +477,7 @@ function App() {
         )}
       </div>
     </div>
+    </ThemeProvider>
   );
 }
 

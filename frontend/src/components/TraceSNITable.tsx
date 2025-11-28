@@ -140,7 +140,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
 
   if (outputs.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-slate-500">
+      <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-500">
         <Shield size={48} className="mb-4 opacity-50" />
         <p>No SNI data available yet...</p>
         <p className="text-sm mt-2">Start the gadget to trace TLS SNI requests</p>
@@ -161,19 +161,19 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-900">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900">
       {/* Header with Search and Export */}
-      <div className="border-b border-slate-700 p-4 bg-slate-800/50">
+      <div className="border-b border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800/50">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-lg font-semibold text-white">SNI Trace Events</h3>
-            <p className="text-sm text-slate-400 mt-1">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">SNI Trace Events</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               {filteredAndSortedEvents.length} of {sniEvents.length} events
             </p>
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-400 rounded font-medium transition-colors"
           >
             <Download size={16} />
             Export CSV
@@ -181,13 +181,13 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
         </div>
 
         <div className="relative max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by pod, container, process, SNI name..."
-            className="w-full bg-slate-900 border border-slate-700 rounded pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
@@ -195,10 +195,10 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
       {/* SNI Events Table */}
       <div className="flex-grow overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-800 sticky top-0 z-10">
+          <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 z-10">
             <tr>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('timestamp')}
               >
                 <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('namespace')}
               >
                 <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('pod')}
               >
                 <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('container')}
               >
                 <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('comm')}
               >
                 <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('pid')}
               >
                 <div className="flex items-center gap-2">
@@ -252,7 +252,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('name')}
               >
                 <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
                 </div>
               </th>
               <th
-                className="text-left p-3 text-slate-300 font-semibold cursor-pointer hover:bg-slate-700/50 transition-colors"
+                className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
                 onClick={() => handleSort('uid')}
               >
                 <div className="flex items-center gap-2">
@@ -275,41 +275,41 @@ export const TraceSNITable: React.FC<Props> = ({ outputs }) => {
             {filteredAndSortedEvents.map((event, index) => (
               <tr
                 key={index}
-                className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
               >
-                <td className="p-3 text-slate-400 font-mono text-xs">
+                <td className="p-3 text-slate-600 dark:text-slate-400 font-mono text-xs">
                   {new Date(event.timestamp).toLocaleTimeString()}
                 </td>
                 <td className="p-3">
-                  <span className="text-xs px-2 py-1 bg-slate-800 text-slate-300 rounded font-mono">
+                  <span className="text-xs px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono">
                     {event.namespace}
                   </span>
                 </td>
-                <td className="p-3 text-slate-300 font-mono text-xs">{event.pod}</td>
+                <td className="p-3 text-slate-700 dark:text-slate-300 font-mono text-xs">{event.pod}</td>
                 <td className="p-3">
-                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded font-mono">
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded font-mono">
                     {event.container}
                   </span>
                 </td>
                 <td className="p-3">
-                  <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded font-mono">
+                  <span className="text-xs px-2 py-1 bg-green-500/20 text-green-700 dark:text-green-400 rounded font-mono">
                     {event.comm}
                   </span>
                 </td>
-                <td className="p-3 text-slate-300 font-mono text-xs">{event.pid}</td>
+                <td className="p-3 text-slate-700 dark:text-slate-300 font-mono text-xs">{event.pid}</td>
                 <td className="p-3">
-                  <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded font-mono font-semibold">
+                  <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded font-mono font-semibold">
                     {event.name || '-'}
                   </span>
                 </td>
-                <td className="p-3 text-slate-400 font-mono text-xs">{event.uid}</td>
+                <td className="p-3 text-slate-600 dark:text-slate-400 font-mono text-xs">{event.uid}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         {filteredAndSortedEvents.length === 0 && searchTerm && (
-          <div className="text-center text-slate-500 py-12">
+          <div className="text-center text-slate-500 dark:text-slate-500 py-12">
             <Search size={48} className="mx-auto mb-4 opacity-50" />
             <p>No SNI events match your search</p>
             <p className="text-sm mt-2">Try adjusting your search term</p>

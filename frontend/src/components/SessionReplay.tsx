@@ -109,16 +109,16 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] border border-slate-700 flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] border border-slate-200 dark:border-slate-700 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <div>
-            <h2 className="text-xl font-bold text-white mb-1">Session Replay</h2>
-            <p className="text-sm text-slate-400 font-mono">{sessionId}</p>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Session Replay</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-mono">{sessionId}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white"
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <X size={20} />
           </button>
@@ -128,13 +128,13 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
           <div className="flex-grow flex items-center justify-center p-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-slate-400">Loading session data...</p>
+              <p className="text-slate-600 dark:text-slate-400">Loading session data...</p>
             </div>
           </div>
         ) : error ? (
           <div className="flex-grow flex items-center justify-center p-8">
             <div className="text-center">
-              <p className="text-red-400 mb-4">{error}</p>
+              <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
               <button
                 onClick={loadSessionData}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
@@ -147,36 +147,36 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
           <>
             {/* Stats */}
             {stats && (
-              <div className="p-6 border-b border-slate-700 bg-slate-900/50">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">Type</div>
-                    <div className="text-sm font-medium text-white">{stats.type}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Type</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{stats.type}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">Namespace</div>
-                    <div className="text-sm font-medium text-white">{stats.namespace || 'All'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Namespace</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{stats.namespace || 'All'}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">Duration</div>
-                    <div className="text-sm font-medium text-white">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Duration</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
                       {stats.end_time ? formatDuration(stats.start_time, stats.end_time) : 'Ongoing'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">Total Events</div>
-                    <div className="text-sm font-medium text-white">{events.length.toLocaleString()}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Events</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{events.length.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Playback controls */}
-            <div className="p-6 border-b border-slate-700">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-4 mb-4">
                 <button
                   onClick={handleReset}
-                  className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-white"
+                  className="p-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-900 dark:text-white"
                   title="Reset to start"
                 >
                   <RotateCcw size={20} />
@@ -190,7 +190,7 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
                 </button>
 
                 <div className="flex-grow">
-                  <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
+                  <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mb-2">
                     <span>Event {currentIndex + 1} of {events.length}</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
@@ -200,9 +200,9 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
                     max={events.length - 1}
                     value={currentIndex}
                     onChange={(e) => handleSeek(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progress}%, #334155 ${progress}%, #334155 100%)`
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progress}%, #cbd5e1 ${progress}%, #cbd5e1 100%)`
                     }}
                   />
                 </div>
@@ -210,7 +210,7 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
                 <select
                   value={playbackSpeed}
                   onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                  className="px-3 py-2 bg-slate-700 text-white rounded text-sm"
+                  className="px-3 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded text-sm border border-slate-300 dark:border-slate-600"
                 >
                   <option value={0.5}>0.5x</option>
                   <option value={1}>1x</option>
@@ -232,16 +232,16 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
             {/* Current event display */}
             {currentEvent && (
               <div className="flex-grow p-6 overflow-y-auto">
-                <div className="bg-slate-900 rounded-lg p-4 mb-4">
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-4 border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-white">Current Event</h3>
-                    <span className="text-sm text-slate-400">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Current Event</h3>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
                       {formatTimestamp(currentEvent.timestamp || currentEvent.Timestamp)}
                     </span>
                   </div>
 
                   <div className="mb-4">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-mono rounded">
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-mono rounded">
                       {currentEvent.eventType || currentEvent.event_type}
                     </span>
                   </div>
@@ -251,8 +251,8 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
                     <div className="space-y-2 mb-4">
                       {Object.entries(currentEvent.data).map(([key, value]) => (
                         <div key={key} className="flex items-start">
-                          <span className="text-slate-400 text-sm w-32 flex-shrink-0">{key}:</span>
-                          <span className="text-white text-sm font-mono flex-grow">
+                          <span className="text-slate-600 dark:text-slate-400 text-sm w-32 flex-shrink-0">{key}:</span>
+                          <span className="text-slate-900 dark:text-white text-sm font-mono flex-grow">
                             {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                           </span>
                         </div>
@@ -262,18 +262,18 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
 
                   {/* Raw JSON */}
                   <details className="mt-4">
-                    <summary className="text-sm text-slate-400 cursor-pointer hover:text-slate-300">
+                    <summary className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
                       Show raw JSON
                     </summary>
-                    <pre className="mt-2 p-3 bg-slate-950 rounded text-xs text-slate-300 overflow-x-auto">
+                    <pre className="mt-2 p-3 bg-white dark:bg-slate-950 rounded text-xs text-slate-700 dark:text-slate-300 overflow-x-auto border border-slate-200 dark:border-slate-800">
                       {JSON.stringify(currentEvent.data, null, 2)}
                     </pre>
                   </details>
                 </div>
 
                 {/* Event timeline */}
-                <div className="bg-slate-900 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                     <BarChart2 size={20} />
                     Event Timeline
                   </h3>
@@ -286,8 +286,8 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
                           index === currentIndex
                             ? 'bg-blue-600 text-white'
                             : index < currentIndex
-                            ? 'bg-slate-800 text-slate-400'
-                            : 'bg-slate-800/50 text-slate-500 hover:bg-slate-800'
+                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            : 'bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'
                         }`}
                       >
                         <span className="font-mono text-xs mr-2">
@@ -311,7 +311,7 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({ sessionId, onClose
 
             {events.length === 0 && (
               <div className="flex-grow flex items-center justify-center p-8">
-                <div className="text-center text-slate-400">
+                <div className="text-center text-slate-600 dark:text-slate-400">
                   <BarChart2 size={48} className="mx-auto mb-4 opacity-50" />
                   <p>No events found for this session</p>
                 </div>
